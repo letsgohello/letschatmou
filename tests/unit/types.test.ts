@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { JobSchema, getSalaryRange, hasSalaryInfo, getJobIdentifier, QueryType } from '@/lib/data/types';
+import { JobSchema, getSalaryRange, hasSalaryInfo, getJobIdentifier } from '@/lib/data/schemas/job';
+import { QueryType } from '@/lib/data/types';
 
 describe('Job Type System', () => {
   describe('JobSchema', () => {

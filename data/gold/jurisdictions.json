@@ -1,0 +1,22 @@
+[
+  {
+    "id": "1",
+    "jurisdiction": "sanbernardino",
+    "name": "San Bernardino"
+  },
+  {
+    "id": "2",
+    "jurisdiction": "ventura",
+    "name": "Ventura"
+  },
+  {
+    "id": "3",
+    "jurisdiction": "sdcounty",
+    "name": "San Diego"
+  },
+  {
+    "id": "4",
+    "jurisdiction": "kerncounty",
+    "name": "Kern"
+  }
+]

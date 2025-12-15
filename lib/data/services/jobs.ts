@@ -1,12 +1,12 @@
 /**
- * Data layer for loading and filtering job data.
- * Implements fuzzy matching and filtering logic for job queries.
+ * Service layer for loading and filtering job data.
+ * Handles data access and business logic for jobs.
  */
 
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import type { Job, JobQuery, JobSearchResult } from './types';
-import { JobSchema } from './types';
+import { Job, JobSchema } from '../schemas/job';
+import type { JobQuery, JobSearchResult } from '../types';
 
 /**
  * Load all jobs from the JSON file.
@@ -208,4 +208,3 @@ export function getJobCountsByJurisdiction(jobs: Job[]): Record<string, number> 
   
   return counts;
 }
-

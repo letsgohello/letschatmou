@@ -5,8 +5,9 @@ import {
   filterJobsByQuery,
   findJobByExactMatch,
   getUniqueJurisdictions,
-} from '@/lib/data/jobs';
-import type { Job, JobQuery } from '@/lib/data/types';
+} from '@/lib/data/services/jobs';
+import type { Job } from '@/lib/data/schemas/job';
+import type { JobQuery } from '@/lib/data/types';
 import { QueryType } from '@/lib/data/types';
 
 describe('Job Filtering and Search', () => {
