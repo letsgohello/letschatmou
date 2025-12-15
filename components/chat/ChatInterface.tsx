@@ -14,6 +14,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { ChatStorage } from '@/lib/storage/chat-storage';
 import { cn } from '@/lib/utils';
 import { Send, Loader2, Copy, Check, Trash2 } from 'lucide-react';
@@ -122,15 +123,12 @@ function ChatInterfaceRoot({ children, className }: ChatInterfaceProps) {
         if (done) break;
 
         const chunk = decoder.decode(value);
-        console.log('Raw chunk:', chunk); // DEBUG
         const lines = chunk.split('\n');
 
         for (const line of lines) {
-          console.log('Line:', line); // DEBUG
           if (line.startsWith('0:')) {
             const text = line.slice(2).replace(/^"(.*)"$/, '$1');
             assistantMessage += text;
-            console.log('Assistant message so far:', assistantMessage); // DEBUG
 
             setMessages(prev => {
               const existing = prev.find(m => m.id === assistantId);
@@ -198,33 +196,55 @@ function ChatInterfaceRoot({ children, className }: ChatInterfaceProps) {
 // Header Subcomponent
 // ============================================================================
 
+function Logo() {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="relative h-8 overflow-hidden" style={{ width: '32px' }}>
+        <Image 
+          src="/holly-icon.png" 
+          alt="Holly" 
+          width={32}
+          height={32}
+          className="h-8 w-8"
+          priority
+        />
+      </div>
+      <h1 className="text-3xl font-bold text-gray-900 leading-none m-0">ChatMOU</h1>
+    </div>
+  );
+}
+
+
 function Header() {
   const { messages, clearChat } = useChatContext();
 
   return (
-    <header className="border-b bg-white px-6 py-4 flex-shrink-0">
-      <div className="flex items-center justify-between max-w-6xl mx-auto">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">ChatMOU</h1>
-          <p className="text-sm text-gray-500">
-            {messages.length > 0
-              ? `${messages.length} message${messages.length === 1 ? '' : 's'}`
-              : 'Ask about salary increases, overtime, benefits...'}
-          </p>
+    <header className="border-b bg-white px-6 py-3 flex-shrink-0">
+      <div className="max-w-6xl mx-auto">
+        {/* Logo unit + Reset button on same line */}
+        <div className="flex items-center justify-between mb-1">
+          <Logo />
+          <button
+            onClick={clearChat}
+            disabled={messages.length === 0}
+            className={cn(
+              'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm',
+              'text-gray-600 hover:bg-gray-100 transition-colors',
+              'disabled:opacity-40 disabled:cursor-not-allowed'
+            )}
+            aria-label="Clear chat"
+          >
+            <Trash2 className="w-4 h-4" />
+            Reset chat
+          </button>
         </div>
-        <button
-          onClick={clearChat}
-          disabled={messages.length === 0}
-          className={cn(
-            'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm',
-            'text-gray-600 hover:bg-gray-100 transition-colors',
-            'disabled:opacity-40 disabled:cursor-not-allowed'
-          )}
-          aria-label="Clear chat"
-        >
-          <Trash2 className="w-4 h-4" />
-          Reset chat
-        </button>
+        
+        {/* Description on its own line below */}
+        <p className="text-sm text-gray-500">
+          {messages.length > 0
+            ? `${messages.length} message${messages.length === 1 ? '' : 's'}`
+            : 'Ask about salary increases, overtime, benefits...'}
+        </p>
       </div>
     </header>
   );
@@ -555,15 +575,38 @@ function EmptyState() {
 }
 
 // ============================================================================
-// Exports
+// Exports - Compound Component Pattern
 // ============================================================================
 
-// Export main root component as ChatInterface
+/**
+ * Main ChatInterface root component
+ */
 export { ChatInterfaceRoot as ChatInterface };
 
-// Export all subcomponents
+/**
+ * Header component
+ */
 export { Header as ChatInterfaceHeader };
+
+/**
+ * Messages component - Container for message list
+ */
 export { Messages as ChatInterfaceMessages };
+
+/**
+ * Message component
+ */
 export { Message as ChatInterfaceMessage };
+
+/**
+ * Input component - Text input and send button
+ */
 export { Input as ChatInterfaceInput };
+
+/**
+ * EmptyState component
+ */
 export { EmptyState as ChatInterfaceEmptyState };
+
+// Export types for external use
+export type { ChatContextValue };

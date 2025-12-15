@@ -5,8 +5,9 @@
 
 import { genAI, MODEL_NAME, validateAIConfig } from '@/lib/ai/client';
 import { SYSTEM_PROMPT, formatJobContext } from '@/lib/ai/prompts';
-import { loadJobs, filterJobsByQuery } from '@/lib/data/jobs';
+import { loadJobs, filterJobsByQuery } from '@/lib/data/services/jobs';
 import { QueryType } from '@/lib/data/types';
+import { findJurisdictionInQuery } from '@/lib/data/services/jurisdictions';
 
 // Use Node.js runtime to support file system access
 export const runtime = 'nodejs';
@@ -31,62 +32,63 @@ export async function POST(req: Request) {
 
     // Load all jobs
     const allJobs = await loadJobs();
-    
+
     // Get the last user message
     const lastMessage = messages[messages.length - 1];
     const userQuery = lastMessage?.content || '';
 
-    // Instead of complex filtering, provide a good sample of jobs
-    // If user mentions specific county or job, try to filter, otherwise give diverse sample
-    const lowerQuery = userQuery.toLowerCase();
-    
     let jobsToInclude = allJobs;
     
-    // If they mention a specific county, filter to that county
-    const counties = ['san diego', 'san bernardino', 'los angeles', 'orange', 
-                     'riverside', 'san francisco', 'sacramento', 'alameda'];
-    const foundCounty = counties.find(county => lowerQuery.includes(county));
+    // Use jurisdiction mapping to find the exact jurisdiction code
+    const jurisdictionCode = await findJurisdictionInQuery(userQuery);
     
-    if (foundCounty) {
+    if (jurisdictionCode) {
+      // Filter to exact jurisdiction match
       jobsToInclude = allJobs.filter(job => 
-        job.jurisdiction.toLowerCase().includes(foundCounty)
+        job.jurisdiction.toLowerCase() === jurisdictionCode.toLowerCase()
       );
     }
     
     // Try fuzzy matching if they mention job keywords
     const query = {
       queryType: QueryType.GENERAL,
-      jurisdiction: foundCounty,
+      jurisdiction: jurisdictionCode,
       jobTitle: userQuery,
     };
     
     const fuzzyMatches = filterJobsByQuery(jobsToInclude, query, 0.15);
-    
-    // Provide either fuzzy matches or a diverse sample
+
+    // Send only top 3-5 most relevant jobs to optimize token usage and accuracy
     const jobsForContext = fuzzyMatches.matchCount > 0
-      ? fuzzyMatches.jobs.slice(0, 25) // More jobs for better context
-      : jobsToInclude.slice(0, 50); // Or provide first 50 jobs as sample
+      ? fuzzyMatches.jobs.slice(0, 3)  // Top 3 most relevant matches
+      : jobsToInclude.slice(0, 5);      // Or 5 sample jobs if no specific match
     
     const context = formatJobContext(jobsForContext);
 
     // Create the model
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
-    // Build the prompt with ALL conversation history and context
+    // Build structured prompt with clear sections
     const conversationHistory = messages.map(m => 
       `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`
     ).join('\n\n');
 
-    // Build the prompt with context
+    // Assemble the full prompt with clear structure
     const fullPrompt = `${SYSTEM_PROMPT}
 
-Available Job Data (${jobsForContext.length} positions):
+===== AVAILABLE JOB POSITIONS =====
+You have access to ${jobsForContext.length} relevant position(s) that match the user's query:
+
 ${context}
 
-Conversation History:
+===== CONVERSATION HISTORY =====
 ${conversationHistory}
 
-Instructions: Answer the user's most recent question using the job data provided above. Be specific and reference actual job titles, salaries, and requirements from the data.`;
+===== CURRENT USER QUESTION =====
+${userQuery}
+
+===== YOUR TASK =====
+Provide a specific, accurate answer to the current user question using ONLY the job data provided above. Reference actual job titles, jurisdictions, salary ranges, and requirements from the available positions.`;
 
     // Generate streaming response
     const result = await model.generateContentStream(fullPrompt);
