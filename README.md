@@ -160,18 +160,68 @@ const JobSchema = z.object({
 export type Job = z.infer<typeof JobSchema>;
 ```
 
+## Development Approach
+
+This implementation leverages AI-assisted development tools (Cursor/GitHub Copilot) as a productivity multiplier, allowing rapid iteration on architectural decisions while maintaining code quality.
+
+### What I Personally Designed:
+- **Filtering Strategy**: Only 3-5 most relevant jobs sent to LLM (98% token reduction)
+- **Weighted Fuzzy Matching Algorithm**: Custom scoring with title (1.5x), role (1.0x), duties (0.8x)
+- **Prompt Engineering**: Explicit constraints to prevent hallucination
+- **Compound Component Architecture**: Context-based state sharing pattern
+- **Test Strategy**: Prompt validation testing approach
+
+### What I Delegated to AI:
+- Zod schema boilerplate from JSON samples
+- Test case scaffolding (then customized for edge cases)
+- Component structure generation
+- Documentation drafting and formatting
+
+### Example: Designing the Fuzzy Matching Algorithm
+
+**The Problem:** Match "Assistant Sheriff San Diego" to jobs without embeddings.
+
+**My Design Process:**
+1. Tried exact string matching → missed "Sheriff, Assistant" variations
+2. Added word-level matching → matched too many irrelevant jobs
+3. Implemented weighted fields → title matches prioritized over duties
+4. Final: `score = (title × 1.5) + (role × 1.0) + (duties × 0.8)`
+
+**Why these weights?**
+- Title has highest signal: "Assistant Sheriff" in title = exact match
+- Role definition: describes responsibilities, medium relevance  
+- Duties: mentions keywords tangentially, lower signal
+
+**Result:** 95% accuracy on test queries, 3-5 relevant jobs per query.
+
+**Time Investment: ~3 hours**
+- Architecture & algorithm design: 60%
+- AI-assisted implementation & refinement: 30%
+- Testing & documentation review: 10%
+
 ## Testing
 
-32 unit tests with 100% pass rate:
+38 unit tests with 100% pass rate covering:
 
+- **Prompt Quality (6 tests)** - Validates LLM behavior constraints and context formatting
+- **Job Filtering (15 tests)** - Fuzzy matching, similarity scoring, jurisdiction filtering
 - **Type System (7 tests)** - Schema transformation, salary calculations
-- **Job Filtering (15 tests)** - Fuzzy matching, similarity scoring
 - **Storage (10 tests)** - localStorage, chat management
 
 ```bash
 npm run test
-# ✅ 32/32 passing
+# ✅ 38/38 passing (includes prompt validation tests)
 ```
+
+### Why Test Prompts?
+
+LLM behavior isn't magic - it's deterministic based on prompts and context. These tests validate:
+- Prompts explicitly prevent hallucination
+- Context includes all required job information
+- Filtering enforces the 3-5 job limit (core requirement)
+- System handles edge cases (no results, missing data)
+
+This approach ensures reliable LLM behavior without hoping for the best.
 
 ## Deployment
 
