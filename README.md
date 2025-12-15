@@ -1,6 +1,8 @@
 # Job Search Chatbot
 
 AI-powered chatbot for querying California county job positions using Next.js 15 and Google Gemini.
+<img width="1512" height="904" alt="image" src="https://github.com/user-attachments/assets/08912a6a-4614-4047-bb79-50ce2b8f2f21" />
+
 
 ## Quick Start
 
